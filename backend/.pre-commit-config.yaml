@@ -15,6 +15,5 @@ repos:
         require_serial: true
         args: [
             "--load-plugins=pylint_django",
-            "--django-settings-module=robot_controller.settings",
             "--rcfile=backend/.pylintrc"
           ]
