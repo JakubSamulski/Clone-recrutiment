@@ -22,7 +22,7 @@ class RobotMock:
         self._state = State.OFFLINE
         self._uptime = "N/A"
         self._fan_mode = "linear"
-
+        self.logs = []
         self.__max_power = 20
         self.__running_since = datetime.datetime.now()
 
@@ -36,6 +36,7 @@ class RobotMock:
             "state": self.state.value,
             "uptime": str(self.uptime),
             "power_consumption": self.power_consumption,
+            "logs": self.logs,
         }
 
     @property
@@ -60,8 +61,10 @@ class RobotMock:
         self._fan_mode = fan_mode
         if self._fan_mode != "linear":
             self._fan_speed = value
+            self.log(f"Fan speed set to custom value {value}")
         else:
             self._fan_speed = self.power_consumption / self.__max_power * 100
+            self.log(f"Fan speed set to linear value {self._fan_speed}")
 
     @property
     def state(self):
@@ -71,7 +74,36 @@ class RobotMock:
     def state(self, value: State):
         if value != State.OFFLINE and self._state == State.OFFLINE:
             self.__running_since = datetime.datetime.now()
+        self.check_state(value)
         self._state = value
+        self.log(f"State changed to {value.value}")
+
+    # So here i don't understand because in the pdf it says
+    # on/off →switch state of the robot from idle → running
+    # reset → switch from error or idle → to idle
+    # but it doesn't say anything about offline so i'm assuming that you have to turn on the robot before starting it
+    # so like offline->idle->running->offline/idle
+    # also nothing about error, so i'm assuming you can go from running to error and then to idle after reset
+
+    def check_state(self, value):
+        match self.state:
+            case State.OFFLINE:
+                if value != State.IDLE or value != State.OFFLINE:
+                    return False
+            case State.IDLE:
+                if value != State.IDLE or value != State.OFFLINE:
+                    return False
+            case State.RUNNING:
+                if (
+                    value != State.IDLE
+                    or value != State.ERROR
+                    or value != State.OFFLINE
+                ):
+                    return False
+            case State.ERROR:
+                if value != State.IDLE or value != State.OFFLINE:
+                    return False
+        return True
 
     @property
     def uptime(self):
@@ -79,6 +111,18 @@ class RobotMock:
             return "N/A"
         else:
             return datetime.datetime.now() - self.__running_since
+
+    def log(self, message):
+        self.logs.append(f"{datetime.datetime.now()}: {message}")
+
+    def clear_logs(self):
+        self.logs = []
+        self.log("Logs cleared")
+
+    def reset(self):
+        if self.state not in [State.ERROR, State.RUNNING]:
+            raise ValueError("Cannot reset robot in current state")
+        self.state = State.IDLE
 
 
 # robot = RobotMock()

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_eventstream",
     "robot_state",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
