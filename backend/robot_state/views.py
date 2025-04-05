@@ -1,4 +1,5 @@
 import asyncio
+import json
 import random
 
 from django.http import StreamingHttpResponse
@@ -17,7 +18,7 @@ async def sse_stream(request):
 
     async def event_stream():
         while True:
-            yield f"data: {robot.toJson()}\n\n"
+            yield f"data: {json.dumps(robot.toJson())}\n\n"
             await asyncio.sleep(1 / 10)
 
     return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
@@ -29,8 +30,11 @@ def set_state(request):
     if state:
         if state.upper() not in State.__members__:
             return Response({"status": "error", "message": "Invalid state"}, status=401)
-        robot.state = State[state.upper()]
-        return Response({"status": "success", "state": robot.state.value})
+        try:
+            robot.state = State[state.upper()]
+            return Response({"status": "success", "state": robot.state.value})
+        except ValueError as e:
+            return Response({"status": "error", "message": str(e)}, status=400)
     else:
         return Response(
             {"status": "error", "message": "State not provided"}, status=401
@@ -43,7 +47,7 @@ def reset(request):
         robot.reset()
         return Response({"status": "success", "message": "Robot reset"})
     except Exception as e:
-        return Response({"status": "error", "message": str(e)}, status=401)
+        return Response({"status": "error", "message": str(e)}, status=400)
 
 
 @api_view(["POST"])
@@ -57,10 +61,10 @@ def change_fan_speed(request):
             robot.set_fan_speed(fan_mode, value)
         else:
             return Response(
-                {"status": "error", "message": "Invalid fan mode or value"}, status=401
+                {"status": "error", "message": "Invalid fan mode or value"}, status=400
             )
         return Response({"status": "success", "fan_speed": robot.fan_speed})
     else:
         return Response(
-            {"status": "error", "message": "Fan mode not provided"}, status=401
+            {"status": "error", "message": "Fan mode not provided"}, status=400
         )

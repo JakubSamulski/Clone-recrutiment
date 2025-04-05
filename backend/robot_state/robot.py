@@ -33,7 +33,7 @@ class RobotMock:
         return {
             "temperature": self.temperature,
             "fan_speed": self.fan_speed,
-            "state": self.state.value,
+            "state": self.state.name,
             "uptime": str(self.uptime),
             "power_consumption": self.power_consumption,
             "logs": self.logs,
@@ -41,7 +41,7 @@ class RobotMock:
 
     @property
     def temperature(self):
-        return self._temperature * (1 - (self._fan_speed / 2))
+        return self._temperature * (100 - (self._fan_speed / 2)) / 100
 
     @property
     def power_consumption(self):
@@ -70,10 +70,17 @@ class RobotMock:
     def state(self):
         return self._state
 
+    def reset_timer(self):
+        self.__running_since = datetime.datetime.now()
+
     @state.setter
     def state(self, value: State):
         if value != State.OFFLINE and self._state == State.OFFLINE:
-            self.__running_since = datetime.datetime.now()
+            self.reset_timer()
+        if not self.check_state(value):
+            raise ValueError(
+                f"Invalid state transition from {self._state.value} to {value.value}"
+            )
         self.check_state(value)
         self._state = value
         self.log(f"State changed to {value.value}")
@@ -88,20 +95,16 @@ class RobotMock:
     def check_state(self, value):
         match self.state:
             case State.OFFLINE:
-                if value != State.IDLE or value != State.OFFLINE:
+                if value != State.IDLE:
                     return False
             case State.IDLE:
-                if value != State.IDLE or value != State.OFFLINE:
+                if value not in [State.RUNNING, State.OFFLINE]:
                     return False
             case State.RUNNING:
-                if (
-                    value != State.IDLE
-                    or value != State.ERROR
-                    or value != State.OFFLINE
-                ):
+                if value not in [State.IDLE, State.ERROR, State.OFFLINE]:
                     return False
             case State.ERROR:
-                if value != State.IDLE or value != State.OFFLINE:
+                if value not in [State.IDLE, State.OFFLINE]:
                     return False
         return True
 
@@ -124,3 +127,4 @@ class RobotMock:
             raise ValueError("Cannot reset robot in current state")
         self.clear_logs()
         self.state = State.IDLE
+        self.reset_timer()

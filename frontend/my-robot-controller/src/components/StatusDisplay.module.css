@@ -1,0 +1,78 @@
+.statusCard {
+  background-color: #2a2a2e;
+  color: #e0e0e0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1.5rem;
+  min-width: 300px;
+}
+
+.title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  font-size: 0.95rem;
+}
+
+.statusGrid > div:nth-child(odd) {
+  font-weight: 500;
+  color: #aaa;
+}
+
+.state {
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.state.idle { background-color: #555; color: #fff; }
+.state.running { background-color: #28a745; color: #fff; }
+.state.paused { background-color: #ffc107; color: #333; }
+.state.charging { background-color: #17a2b8; color: #fff; }
+.state.error { background-color: #dc3545; color: #fff; }
+.state.unknown { background-color: #6c757d; color: #fff; }
+
+.errorLabel {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+.errorMessage {
+  color: #ff6b6b;
+  font-style: italic;
+}
+
+.indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: 10px;
+  vertical-align: middle;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.indicator.connected { background-color: #34d399; animation: none; } /* Green */
+.indicator.connecting { background-color: #fbbf24; } /* Amber */
+.indicator.disconnected { background-color: #9ca3af; animation: none; } /* Gray */
+.indicator.error { background-color: #f87171; } /* Red */
+
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
