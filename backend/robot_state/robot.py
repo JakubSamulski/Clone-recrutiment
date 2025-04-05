@@ -122,14 +122,5 @@ class RobotMock:
     def reset(self):
         if self.state not in [State.ERROR, State.RUNNING]:
             raise ValueError("Cannot reset robot in current state")
+        self.clear_logs()
         self.state = State.IDLE
-
-
-# robot = RobotMock()
-# robot.state = State.IDLE
-# print(robot)
-# sleep(1)
-# robot.set_fan_speed("custom", 0.5)
-# print(robot)
-# robot.set_fan_speed("custom", 0.5)
-# print(robot)
