@@ -1,7 +1,9 @@
 import datetime
+import logging
 import random
 from enum import Enum
-from time import sleep
+
+from robot_controller.settings import LOG_LEVEL
 
 
 # i'm wondering if the types in Robot state (current temperature in Celsius ( float16 )" are a hint to the usage of database
@@ -22,21 +24,28 @@ class RobotMock:
         self._state = State.OFFLINE
         self._uptime = "N/A"
         self._fan_mode = "linear"
-        self.logs = []
         self.__max_power = 20
         self.__running_since = datetime.datetime.now()
+        # Configure the logger
+        self.logger = logging.getLogger(__name__)
+        self.list_handler = ListHandler()
+        self.list_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
+        self.logger.setLevel(LOG_LEVEL)
+        self.logger.addHandler(self.list_handler)
 
     def __str__(self):
         return f"RobotMock(temperature={self.temperature}, fan_speed={self.fan_speed}, state={self.state}, uptime={self.uptime})"
 
-    def toJson(self):
+    def to_json(self):
         return {
             "temperature": self.temperature,
             "fan_speed": self.fan_speed,
             "state": self.state.name,
             "uptime": str(self.uptime),
             "power_consumption": self.power_consumption,
-            "logs": self.logs,
+            "logs": self.list_handler.log_list,
         }
 
     @property
@@ -61,10 +70,12 @@ class RobotMock:
         self._fan_mode = fan_mode
         if self._fan_mode != "linear":
             self._fan_speed = value
-            self.log(f"Fan speed set to custom value {value}")
+            self.logger.log(logging.INFO, f"Fan speed set to custom value {value}")
         else:
             self._fan_speed = self.power_consumption / self.__max_power * 100
-            self.log(f"Fan speed set to linear value {self._fan_speed}")
+            self.logger.log(
+                logging.INFO, f"Fan speed set to linear value {self._fan_speed}"
+            )
 
     @property
     def state(self):
@@ -77,13 +88,23 @@ class RobotMock:
     def state(self, value: State):
         if value != State.OFFLINE and self._state == State.OFFLINE:
             self.reset_timer()
+
         if not self.check_state(value):
             raise ValueError(
                 f"Invalid state transition from {self._state.value} to {value.value}"
             )
-        self.check_state(value)
+
+        if value == State.RUNNING:
+            if random.randint(0, 1) == 0:  # Simulate 50% error on starting
+                self.logger.log(
+                    logging.ERROR, "Error occurred while starting the robot"
+                )
+                self._state = State.ERROR
+
+                return
+
         self._state = value
-        self.log(f"State changed to {value.value}")
+        self.logger.log(logging.INFO, f"State changed to {self._state.value}")
 
     # So here i don't understand because in the pdf it says
     # on/off →switch state of the robot from idle → running
@@ -115,16 +136,28 @@ class RobotMock:
         else:
             return datetime.datetime.now() - self.__running_since
 
-    def log(self, message):
-        self.logs.append(f"{datetime.datetime.now()}: {message}")
-
     def clear_logs(self):
-        self.logs = []
-        self.log("Logs cleared")
+        self.list_handler.clear()
+        self.logger.log(logging.INFO, "Logs cleared")
 
     def reset(self):
         if self.state not in [State.ERROR, State.RUNNING]:
+            self.logger.log(logging.ERROR, "Cannot reset robot in current state")
             raise ValueError("Cannot reset robot in current state")
         self.clear_logs()
         self.state = State.IDLE
         self.reset_timer()
+
+
+class ListHandler(logging.Handler):
+    """Custom handler that adds log records to a list."""
+
+    def __init__(self):
+        super().__init__()
+        self.log_list = []
+
+    def emit(self, record):
+        self.log_list.append(self.format(record))
+
+    def clear(self):
+        self.log_list = []

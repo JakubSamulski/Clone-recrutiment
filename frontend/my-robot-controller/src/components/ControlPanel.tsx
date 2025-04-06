@@ -3,9 +3,10 @@ import {RobotStateCommand, RobotStatus} from '../types';
 import styles from './ControlPanel.module.css';
 
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5478/api';
 
 async function sendCommand<T>(endpoint: string, data?: T): Promise<boolean> {
+    console.log(`Sending command to ${endpoint} with data:`, data);
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, {
             method: 'POST',
@@ -92,7 +93,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({currentFanSpeed,  status}) =
                         disabled={isSubmitting['setState-stopped']}
                         className={`${styles.button} ${styles.buttonWarning}`}
                     >
-                        Stop
+                        Stopv
                     </button>}
                     {(status?.state === 'RUNNING' || status?.state === 'IDLE' ||status?.state === "ERROR") &&
                     <button

@@ -7,9 +7,10 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from robot_state.robot import RobotMock
+from robot_state.robot import RobotMock, State
 
-from robot_state.robot import State
+
+from robot_controller.settings import REFRESH_RATE
 
 robot = RobotMock()
 
@@ -18,8 +19,8 @@ async def sse_stream(request):
 
     async def event_stream():
         while True:
-            yield f"data: {json.dumps(robot.toJson())}\n\n"
-            await asyncio.sleep(1 / 10)
+            yield f"data: {json.dumps(robot.to_json())}\n\n"
+            await asyncio.sleep(1 / REFRESH_RATE)
 
     return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 

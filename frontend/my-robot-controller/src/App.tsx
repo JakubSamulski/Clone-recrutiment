@@ -4,7 +4,7 @@ import StatusDisplay from './components/StatusDisplay';
 import ControlPanel from './components/ControlPanel.tsx';
 import styles from './App.module.css';
 
-const STREAM_URL = 'http://localhost:8000/api/stream';
+const STREAM_URL = import.meta.env.VITE_API_BASE + "/stream" || 'http://localhost:5478/api/stream';
 
 function App() {
   const [robotStatus, setRobotStatus] = useState<RobotStatus | null>(null);

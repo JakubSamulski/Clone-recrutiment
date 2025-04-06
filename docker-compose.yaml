@@ -1,0 +1,29 @@
+services:
+  frontend:
+    image: frontend
+    container_name: frontend
+    build:
+      context: ./frontend/my-robot-controller
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    networks:
+        - my-network
+  backend:
+    image: backend
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+         host: 0.0.0.0
+         port: 5478
+         log_level: INFO
+         refresh_rate: 60
+    ports:
+        - ${BACKEND_PORT}:${BACKEND_PORT}
+    networks:
+        - my-network
+networks:
+  my-network:
+    driver: bridge
